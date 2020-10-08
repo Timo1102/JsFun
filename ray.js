@@ -10,6 +10,10 @@ class Ray {
     this.dir.normalize();
   }
 
+  setAngle(a) {
+    this.dir = p5.Vector.fromAngle(a);
+  }
+
   show() {
     stroke(255);
     push();

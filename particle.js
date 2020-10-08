@@ -1,8 +1,10 @@
 class Particle {
   constructor() {
+    this.fov = 45;
     this.pos = createVector(width / 2, height / 2);
     this.rays = [];
-    for (let a = 0; a < 360; a += 1) {
+    this.heading = 0;
+    for (let a = -this.fov / 2; a < this.fov / 2; a += 1) {
       this.rays.push(new Ray(this.pos, radians(a)));
     }
     console.log(this.rays.length);
@@ -12,15 +14,45 @@ class Particle {
     this.pos.set(x, y);
   }
 
+  updateFOV(fov) {
+    this.rays = [];
+    this.fov = fov;
+    for (let a = -this.fov / 2; a < this.fov / 2; a += 1) {
+      this.rays.push(new Ray(this.pos, radians(a) + this.heading));
+    }
+  }
+
+  rotate(angle) {
+    this.heading += angle;
+
+    let index = 0;
+    for (let a = -this.fov / 2; a < this.fov / 2; a += 1) {
+      this.rays[index].setAngle(radians(a) + this.heading);
+      index++;
+    }
+  }
+
+  move(p) {
+    const vel = p5.Vector.fromAngle(this.heading);
+    vel.setMag(p);
+    this.pos.add(vel);
+  }
+
   look(walls) {
-    for (let ray of this.rays) {
+    const scene = [];
+    for (let i = 0; i < this.rays.length; i++) {
+      const ray = this.rays[i];
       let closest = null;
       let record = Infinity;
       for (let wall of walls) {
-        const pt = ray.cast(wall);
+        const pt = this.rays[i].cast(wall);
 
         if (pt) {
-          const d = p5.Vector.dist(this.pos, pt);
+          let d = p5.Vector.dist(this.pos, pt);
+          const a = ray.dir.heading() - this.heading;
+          if (!mouseIsPressed) {
+            d *= cos(a);
+          }
           if (d < record) {
             record = d;
             closest = pt;
@@ -31,7 +63,9 @@ class Particle {
         stroke(255, 100);
         line(this.pos.x, this.pos.y, closest.x, closest.y);
       }
+      scene[i] = record;
     }
+    return scene;
   }
 
   show() {
